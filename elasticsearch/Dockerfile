@@ -1,4 +1,5 @@
-ARG ELK_VERSION
+#ARG ELK_VERSION
+ARG latest
 
 # https://github.com/elastic/elasticsearch-docker
 FROM docker.elastic.co/elasticsearch/elasticsearch:${ELK_VERSION}

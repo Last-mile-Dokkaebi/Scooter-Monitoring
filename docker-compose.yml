@@ -1,20 +1,26 @@
-version: '2'
+version: '3'
 
 services:
   elasticsearch:
-    build:
-      container_name: elasticsearch
-      context: elasticsearch/
-      args:
-        ELK_VERSION: $ELK_VERSION
+    container_name: elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.6
+    #build:
+    # context: elasticsearch/
+    # args:
+    #    ELK_VERSION: $ELK_VERSION
     volumes:
       - ./elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:ro
       - /etc/localtime:/etc/localtime:ro
+      - data01:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
       - "9300:9300"
     environment:
-      ES_JAVA_OPTS: "-Xmx1G -Xms1G"
+      ES_JAVA_OPTS: "-Xmx512m -Xms512m"
+      http.cors.enabled : 'true'
+      http.cors.allow-origin : "*"
+      http.cors.allow-methods : OPTIONS, HEAD, GET, POST, PUT, DELETE
+      http.cors.allow-headers : X-Requested-With,X-Auth-Token,Content-Type, Content-Length
       #ELASTIC_PASSWORD: changeme
     networks:
       - elk
@@ -29,11 +35,13 @@ services:
       - ./logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
       - ./logstash/pipeline:/usr/share/logstash/pipeline:ro
       - /etc/localtime:/etc/localtime:ro
+      - data02:/usr/share/elasticsearch/data
+      - ./logstash/mysql-connector-java-8.0.16.jar:/usr/share/logstash/logstash-core/lib/jars/mysql-connector-java-8.0.16.jar
     ports:
       - "5000:5000"
       - "9600:9600"
     environment:
-      LS_JAVA_OPTS: "-Xmx1G -Xms1G"
+      LS_JAVA_OPTS: "-Xmx512m -Xms512m"
     networks:
       - elk
     depends_on:
@@ -41,19 +49,34 @@ services:
 
   kibana:
     container_name: kibana
-    build:
-      context: kibana/
-      args:
-        ELK_VERSION: $ELK_VERSION
+    image: docker.elastic.co/kibana/kibana:7.17.6
+   # build:
+   #   context: kibana/
+   #   args:
+   #     ELK_VERSION: $ELK_VERSION
     volumes:
       - ./kibana/config/kibana.yml:/usr/share/kibana/config/kibana.yml:ro
       - /etc/localtime:/etc/localtime:ro
+      - data03:/usr/share/elasticsearch/data
     ports:
       - "5601:5601"
+    environment:
+      http.cors.enabled : 'true'
+      http.cors.allow-origin : "*"
+      http.cors.allow-methods : OPTIONS, HEAD, GET, POST, PUT, DELETE
+      http.cors.allow-headers : X-Requested-With,X-Auth-Token,Content-Type, Content-Length
     networks:
       - elk
     depends_on:
       - elasticsearch
+
+volumes:
+  data01:
+    driver: local
+  data02:
+    driver: local
+  data03:
+    driver: local
 
 networks:
 
